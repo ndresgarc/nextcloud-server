@@ -1329,7 +1329,7 @@ class Access extends LDAPUtility {
 		}
 
 		if(!is_null($attr) && !is_array($attr)) {
-			$attr = array(mb_strtolower($attr, 'UTF-8'));
+			$attr = [mb_strtolower($attr, 'UTF-8')];
 		}
 
 		/* ++ Fixing RHDS searches with pages with zero results ++
@@ -2043,23 +2043,15 @@ class Access extends LDAPUtility {
 				$reOffset = ($offset - $limit) < 0 ? 0 : $offset - $limit;
 				$this->search($filter, $base, $attr, $limit, $reOffset, true);
 			}
-			if($this->lastCookie !== '') {
+			if($this->lastCookie !== '' && $offset === 0) {
 				//since offset = 0, this is a new search. We abandon other searches that might be ongoing.
 				$this->abandonPagedSearch();
-				$pagedSearchOK = true === $this->invokeLDAPMethod('controlPagedResult',
-					$this->connection->getConnectionResource(), $limit,
-					false);
-				if($pagedSearchOK) {
-					\OC::$server->getLogger()->debug(
-						'Ready for a paged search',
-						['app' => 'user_ldap']
-					);
-				}
-				return $pagedSearchOK;
-			} else {
-				$e = new \Exception('No paged search possible, Limit '.$limit.' Offset '.$offset);
-				\OC::$server->getLogger()->logException($e, ['level' => ILogger::DEBUG]);
-				return false;
+			}
+			$pagedSearchOK = true === $this->invokeLDAPMethod(
+				'controlPagedResult', $this->connection->getConnectionResource(), $limit, false
+			);
+			if ($pagedSearchOK) {
+				\OC::$server->getLogger()->debug('Ready for a paged search',['app' => 'user_ldap']);
 			}
 
 		/* ++ Fixing RHDS searches with pages with zero results ++
